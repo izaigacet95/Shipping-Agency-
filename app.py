@@ -1,8 +1,11 @@
 
-from flask import Flask, request 
-from flask_sqlalchemy import SQLAlchemy
-import mysql.connector
-from mysql.connector import Error
+# Importing necessary libraries
+from flask import Flask, request  # Core Flask imports
+from flask_sqlalchemy import SQLAlchemy  # Database ORM
+from flask_migrate import Migrate  # For database migrations
+from flask_login import LoginManager  # For user authentication
+import mysql.connector  # MySQL connection
+from mysql.connector import Error  # MySQL error handling
 from urllib.parse import quote  # Import quote to handle special characters in password
 
 app = Flask(__name__)
@@ -20,6 +23,56 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Initialize the SQLAlchemy database
 db = SQLAlchemy(app)
+
+# Initialize Flask-Migrate
+migrate = Migrate(app, db)
+
+# Initialize Flask-Login
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = "login"  # Redirects to login if unauthenticated
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
+
+# Define the User model
+class User(db.Model, UserMixin):
+    __tablename__ = 'users'
+
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(100), unique=True, nullable=False)
+    password = db.Column(db.String(100), nullable=False)  # Use hashed passwords in production
+    role = db.Column(db.String(50), nullable=False)  # e.g., "Employee", "Manager"
+
+# Login route
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == "POST":
+        username = request.form["username"]
+        password = request.form["password"]
+        user = User.query.filter_by(username=username).first()
+        if user and user.password == password:  # Hash passwords in production
+            login_user(user)
+            return {"message": f"Welcome, {user.username}!"}
+        else:
+            return {"error": "Invalid credentials, please try again."}
+    return {"message": "This is the login page. Use POST to submit your credentials."}
+
+# Logout route
+@app.route("/logout")
+@login_required
+def logout():
+    logout_user()
+    return {"message": "You have been logged out."}
+
+# Protect sensitive routes
+@app.route("/view_clients", methods=["GET"])
+@login_required
+def view_clients():
+    # Your existing view_clients code
+    pass
+
 
 # Define the Client model (minimal information for the sender)
 class Client(db.Model):
