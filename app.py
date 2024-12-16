@@ -1,14 +1,27 @@
 
 # Importing necessary libraries
 from flask import Flask, request  # Core Flask imports
+from Blueprints.auth import auth_blueprint  # Updated path
+from Blueprints.supervisor import supervisor_blueprint  # Updated path
+from Blueprints.manager import manager_blueprint  # Updated path
+from Blueprints.employee import employee_blueprint  # Updated path
 from flask_sqlalchemy import SQLAlchemy  # Database ORM
 from flask_migrate import Migrate  # For database migrations
-from flask_login import LoginManager  # For user authentication
+from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required  # For user authentication and session management
+from datetime import datetime  # Import datetime for timestamps
 import mysql.connector  # MySQL connection
 from mysql.connector import Error  # MySQL error handling
 from urllib.parse import quote  # Import quote to handle special characters in password
+from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
+
+# Register blueprints
+app.register_blueprint(auth_blueprint, url_prefix='/auth')
+app.register_blueprint(supervisor_blueprint, url_prefix='/supervisor') # Add supervisor routes
+app.register_blueprint(manager_blueprint, url_prefix='/manager')  # Add manager routes
+app.register_blueprint(employee_blueprint, url_prefix='/employee')  # Add employee routes
+
 
 # MySQL Database configuration
 app.config['MYSQL_HOST'] = 'localhost'
@@ -27,10 +40,13 @@ db = SQLAlchemy(app)
 # Initialize Flask-Migrate
 migrate = Migrate(app, db)
 
+if __name__ == '__main__':
+    app.run(debug=True)
+
 # Initialize Flask-Login
 login_manager = LoginManager()
 login_manager.init_app(app)
-login_manager.login_view = "login"  # Redirects to login if unauthenticated
+login_manager.login_view = "auth.login"  # Redirect to login page if unauthenticated
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -42,8 +58,16 @@ class User(db.Model, UserMixin):
 
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(100), unique=True, nullable=False)
-    password = db.Column(db.String(100), nullable=False)  # Use hashed passwords in production
-    role = db.Column(db.String(50), nullable=False)  # e.g., "Employee", "Manager"
+    password_hash = db.Column(db.String(100), nullable=False)  # Use hashed passwords
+    role = db.Column(db.String(50), nullable=False)  # e.g., "Employee", "Manager", "Supervisor"
+
+    # Set password
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password)
+
+    # Check password
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
 
 # Login route
 @app.route("/login", methods=["GET", "POST"])
@@ -74,16 +98,28 @@ def view_clients():
     pass
 
 
+class Location(db.Model):
+    __tablename__ = 'locations'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)  # Location Name
+    address = db.Column(db.String(255), nullable=False)  # Address
+    agency_id = db.Column(db.Integer, db.ForeignKey('agencies.id'), nullable=False)
+    agency = db.relationship('Agency', backref='locations')
+
+
 # Define the Client model (minimal information for the sender)
 class Client(db.Model):
     __tablename__ = 'clients'
 
     id = db.Column(db.Integer, primary_key=True)
     full_name = db.Column(db.String(100), nullable=False)
+    date_of_birth = db.Column(db.Date, nullable=True)
     contact_number = db.Column(db.String(20))
     address = db.Column(db.String(255), nullable=False)
+    zip_code = db.Column(db.String(10), nullable=True)
     email = db.Column(db.String(100))
     packages = db.relationship('Package', backref='client', lazy=True)
+
 
     # Add cascade option to delete associated packages when client is deleted
     packages = db.relationship('Package', backref='client', lazy=True, cascade="all, delete-orphan")
@@ -94,11 +130,14 @@ class Recipient(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     full_name = db.Column(db.String(100), nullable=False)
+    date_of_birth = db.Column(db.Date, nullable=True)
+    contact_details = db.Column(db.String(255))
     neighborhood = db.Column(db.String(100))
     municipality = db.Column(db.String(100))
     province = db.Column(db.String(100))
-    contact_details = db.Column(db.String(255))
+    province_code = db.Column(db.String(10), nullable=True)
     packages = db.relationship('Package', backref='recipient', lazy=True)
+
 
 # Define the Package model to capture package details
 class Package(db.Model):
@@ -114,6 +153,13 @@ class Package(db.Model):
     miscellaneous = db.Column(db.String(255))
     client_id = db.Column(db.Integer, db.ForeignKey('clients.id'), nullable=False)
     recipient_id = db.Column(db.Integer, db.ForeignKey('recipients.id'), nullable=False)
+
+class ClientHistory(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    client_id = db.Column(db.Integer, db.ForeignKey('clients.id'))
+    change_details = db.Column(db.String(255))
+    changed_at = db.Column(db.DateTime, default=datetime.utcnow)
+
 
 # Home route
 @app.route("/")
