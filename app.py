@@ -1,18 +1,26 @@
 
 # Importing necessary libraries
 from flask import Flask, request  # Core Flask imports
-from Blueprints.auth import auth_blueprint  # Updated path
-from Blueprints.supervisor import supervisor_blueprint  # Updated path
-from Blueprints.manager import manager_blueprint  # Updated path
-from Blueprints.employee import employee_blueprint  # Updated path
+
+# Importing Blueprints (modular components for better project organization)
+from Blueprints.auth import auth_blueprint  # Handles authentication routes and logic
+from Blueprints.supervisor import supervisor_blueprint  # Handles supervisor-specific routes and logic
+from Blueprints.manager import manager_blueprint  # Handles manager-specific routes and permissions
+from Blueprints.employee import employee_blueprint  # Handles employee-specific routes and actions
+
+# Database and migration tools
 from flask_sqlalchemy import SQLAlchemy  # Database ORM
 from flask_migrate import Migrate  # For database migrations
+
+# User authentication and session management
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required  # For user authentication and session management
+
+# Utility libraries
 from datetime import datetime  # Import datetime for timestamps
 import mysql.connector  # MySQL connection
 from mysql.connector import Error  # MySQL error handling
 from urllib.parse import quote  # Import quote to handle special characters in password
-from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.security import generate_password_hash, check_password_hash # Hashing and checking passwords
 
 app = Flask(__name__)
 
