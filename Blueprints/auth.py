@@ -1,8 +1,14 @@
 # Import necessary libraries
 from flask import Blueprint, request, redirect, url_for, jsonify
+<<<<<<< HEAD
 from werkzeug.security import generate_password_hash
 from flask_login import login_user
 from app import User, db  # Import User model and database instance
+=======
+from flask_login import login_user
+from app import db  # Import database instance
+from app import User  # Import User model ß
+>>>>>>> c27c1f3 (Reinitialize repository and add files)
 
 auth_blueprint = Blueprint('auth', __name__)
 

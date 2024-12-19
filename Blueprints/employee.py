@@ -1,7 +1,12 @@
 # Import necessary libraries
 from flask import Blueprint, jsonify
 from flask_login import login_required, current_user
+<<<<<<< HEAD
 from app import User, db  # Import User model and database instance
+=======
+from app import db  # Import database instance
+from app import User  # Import User model
+>>>>>>> c27c1f3 (Reinitialize repository and add files)
 
 employee_blueprint = Blueprint('employee', __name__)
 

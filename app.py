@@ -7,9 +7,16 @@ from Blueprints.auth import auth_blueprint  # Handles authentication routes and 
 from Blueprints.supervisor import supervisor_blueprint  # Handles supervisor-specific routes and logic
 from Blueprints.manager import manager_blueprint  # Handles manager-specific routes and permissions
 from Blueprints.employee import employee_blueprint  # Handles employee-specific routes and actions
+<<<<<<< HEAD
 
 # Database and migration tools
 from flask_sqlalchemy import SQLAlchemy  # Database ORM
+=======
+from models import db  # Import database instance
+from models import User  # Import User model
+
+# Migration tools
+>>>>>>> c27c1f3 (Reinitialize repository and add files)
 from flask_migrate import Migrate  # For database migrations
 
 # User authentication and session management
@@ -20,6 +27,7 @@ from datetime import datetime  # Import datetime for timestamps
 import mysql.connector  # MySQL connection
 from mysql.connector import Error  # MySQL error handling
 from urllib.parse import quote  # Import quote to handle special characters in password
+<<<<<<< HEAD
 from werkzeug.security import generate_password_hash, check_password_hash # Hashing and checking passwords
 
 app = Flask(__name__)
@@ -31,6 +39,11 @@ app.register_blueprint(manager_blueprint, url_prefix='/manager')  # Add manager 
 app.register_blueprint(employee_blueprint, url_prefix='/employee')  # Add employee routes
 
 
+=======
+
+app = Flask(__name__)
+
+>>>>>>> c27c1f3 (Reinitialize repository and add files)
 # MySQL Database configuration
 app.config['MYSQL_HOST'] = 'localhost'
 app.config['MYSQL_USER'] = 'root'
@@ -42,20 +55,29 @@ encoded_password = quote(app.config['MYSQL_PASSWORD'])
 app.config['SQLALCHEMY_DATABASE_URI'] = f"mysql+mysqlconnector://{app.config['MYSQL_USER']}:{encoded_password}@{app.config['MYSQL_HOST']}/{app.config['MYSQL_DB']}"
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
+<<<<<<< HEAD
 # Initialize the SQLAlchemy database
 db = SQLAlchemy(app)
+=======
+# Initialize the database
+db.init_app(app)
+>>>>>>> c27c1f3 (Reinitialize repository and add files)
 
 # Initialize Flask-Migrate
 migrate = Migrate(app, db)
 
+<<<<<<< HEAD
 if __name__ == '__main__':
     app.run(debug=True)
 
+=======
+>>>>>>> c27c1f3 (Reinitialize repository and add files)
 # Initialize Flask-Login
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = "auth.login"  # Redirect to login page if unauthenticated
 
+<<<<<<< HEAD
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
@@ -76,6 +98,25 @@ class User(db.Model, UserMixin):
     # Check password
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
+=======
+    
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
+    
+    
+# Register blueprints
+app.register_blueprint(auth_blueprint, url_prefix='/auth')
+app.register_blueprint(supervisor_blueprint, url_prefix='/supervisor') # Add supervisor routes
+app.register_blueprint(manager_blueprint, url_prefix='/manager')  # Add manager routes
+app.register_blueprint(employee_blueprint, url_prefix='/employee')  # Add employee routes
+
+
+# Home route
+@app.route("/")
+def home():
+    return "Welcome to the Shipping Agency Program!"
+>>>>>>> c27c1f3 (Reinitialize repository and add files)
 
 # Login route
 @app.route("/login", methods=["GET", "POST"])
@@ -98,6 +139,36 @@ def logout():
     logout_user()
     return {"message": "You have been logged out."}
 
+<<<<<<< HEAD
+=======
+
+# Test database connection route
+@app.route("/test_db")
+def test_db():
+    connection = None  # Initialize connection as None
+    try:
+        connection = mysql.connector.connect(
+            host=app.config['MYSQL_HOST'],
+            user=app.config['MYSQL_USER'],
+            password=app.config['MYSQL_PASSWORD'],
+            database=app.config['MYSQL_DB']
+        )
+        if connection.is_connected():
+            return "Database connection successful!"
+    except Error as e:
+        return f"Error connecting to MySQL: {e}"
+    finally:
+        if connection and connection.is_connected():
+            connection.close()
+            
+
+# Run the Application
+if __name__ == "__main__":
+    with app.app_context():
+        db.create_all()
+    app.run(debug=True)
+            
+>>>>>>> c27c1f3 (Reinitialize repository and add files)
 # Protect sensitive routes
 @app.route("/view_clients", methods=["GET"])
 @login_required
@@ -168,6 +239,7 @@ class ClientHistory(db.Model):
     change_details = db.Column(db.String(255))
     changed_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+<<<<<<< HEAD
 
 # Home route
 @app.route("/")
@@ -192,6 +264,8 @@ def test_db():
     finally:
         if connection and connection.is_connected():
             connection.close()
+=======
+>>>>>>> c27c1f3 (Reinitialize repository and add files)
             
 # Add a route for adding clients, recipients, and packages
 @app.route("/add_client_and_package", methods=["POST"])
